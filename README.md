@@ -71,7 +71,7 @@ This uses `/2/users/:id/public_keys` and stores:
 All are saved in `state.json`.
 
 
-## Step 3: Subscribe to Activity Stream
+## Step 3: Subscribe to Activity Stream (DOESN'T EXIST YET IN PUBLIC_API)
 
 Create a `chat.received` subscription for the authenticated user:
 
