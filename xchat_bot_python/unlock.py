@@ -27,9 +27,6 @@ def _get_public_keys(client: Client, user_id: str, fields: list[str]) -> dict:
     headers = {"Authorization": f"Bearer {token}"}
     params = {"public_key.fields": ",".join(fields)}
     resp = client.session.get(url, headers=headers, params=params)
-    tx_id = resp.headers.get("x-transaction-id")
-    if tx_id:
-        print(f"x-transaction-id: {tx_id}")
     resp.raise_for_status()
     return resp.json()
 
@@ -77,8 +74,6 @@ def main() -> None:
             juicebox_config = json.dumps(config_obj)
         else:
             juicebox_config = json.dumps(juicebox_config)
-    if juicebox_config:
-        print(f"juicebox_config: {juicebox_config}")
     signing_key_version = data.get("version") or ""
     if not juicebox_config:
         raise SystemExit("Missing juicebox_config in public keys response")
