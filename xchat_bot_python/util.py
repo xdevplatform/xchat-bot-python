@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from typing import Any
+
 from chat_xdk import Chat
 
 
@@ -23,6 +26,27 @@ def redact_secret(value: str | None, *, keep_start: int = 6, keep_end: int = 4) 
 
 def truthy_env(value: str | None) -> bool:
     return (value or "").strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def safe_json(
+    obj: Any,
+    *,
+    max_len: int = 2000,
+    default: str = "<unserializable>",
+) -> str:
+    """
+    JSON-dump an object for logs, but never blow up log volume.
+
+    This is for *diagnostics* only; callers are responsible for redacting secrets.
+    """
+
+    try:
+        s = json.dumps(obj, sort_keys=True, default=str)
+    except Exception:
+        return default
+    if len(s) <= max_len:
+        return s
+    return s[: max_len - 1] + "…"
 
 
 def pick_decryptable_key(

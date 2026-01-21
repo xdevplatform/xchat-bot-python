@@ -15,7 +15,7 @@ from xdk.streaming import StreamConfig, StreamError
 
 from .env import load_env
 from .state import load_state
-from .util import as_dict, pick_decryptable_key, redact_secret, truthy_env
+from .util import as_dict, pick_decryptable_key, redact_secret, safe_json, truthy_env
 
 
 Handler = Callable[["Context"], Any]
@@ -74,8 +74,8 @@ def _build_send_client(env: dict, token: dict) -> Client:
 def _stream_config() -> StreamConfig:
     return StreamConfig(
         max_retries=-1,
-        on_connect=lambda: print("Connected to activity stream"),
-        on_disconnect=lambda exc=None: print(f"Disconnected: {exc!r}"),
+        on_connect=lambda: logger.info("stream_connected"),
+        on_disconnect=lambda exc=None: logger.warning("stream_disconnected exc=%r", exc),
         on_reconnect=lambda attempt, delay: print(
             f"Reconnecting attempt={attempt} in {delay:.1f}s"
         ),
@@ -116,6 +116,16 @@ def _summarize_payload(payload: dict) -> dict[str, Any]:
         "has_conversation_key_change_event": bool(payload.get("conversation_key_change_event")),
         "conversation_key_version": payload.get("conversation_key_version"),
         "payload_keys": sorted([k for k in payload.keys() if isinstance(k, str)])[:50],
+    }
+
+
+def _summarize_event(event: dict) -> dict[str, Any]:
+    data = event.get("data") or {}
+    payload = (data.get("payload") or {}) if isinstance(data, dict) else {}
+    return {
+        "event_keys": sorted([k for k in event.keys() if isinstance(k, str)])[:50],
+        "event_type": data.get("event_type") if isinstance(data, dict) else None,
+        "payload": _summarize_payload(payload) if isinstance(payload, dict) else {"invalid": True},
     }
 
 
@@ -243,6 +253,7 @@ class XChatBot:
         self._events: dict[str, list[EventHandler]] = {}
         self._async_thread = _AsyncLoopThread()
         self._async_loop: Optional[asyncio.AbstractEventLoop] = None
+        self._trace_events: bool = False
 
         # Initialized in setup()
         self._env: dict[str, str] = {}
@@ -329,6 +340,7 @@ class XChatBot:
         self._env = load_env()
         _configure_logging(self._env)
         self._state = load_state()
+        self._trace_events = truthy_env(self._env.get("XCHAT_TRACE_EVENTS"))
         self.preflight()
 
         token = self._state.get("oauth_token")
@@ -361,6 +373,10 @@ class XChatBot:
             self.command_prefix,
             len({k: v for k, v in self._commands.items() if v}),
         )
+        if self._trace_events:
+            logger.warning(
+                "trace_events_enabled: XCHAT_TRACE_EVENTS=1 will log high-volume sanitized event summaries"
+            )
 
     def _ensure_async_loop(self) -> asyncio.AbstractEventLoop:
         if self._async_loop and self._async_loop.is_running():
@@ -437,11 +453,13 @@ class XChatBot:
             # Allow people to call run() directly without remembering setup().
             self.setup()
 
-        print("Listening for chat.received events...")
+        logger.info("bot_run_start listening_for=chat.received")
         try:
             for item in self._stream_client.activity.stream(stream_config=_stream_config()):
                 try:
                     event = as_dict(item)
+                    if self._trace_events:
+                        logger.debug("stream_item event=%s", safe_json(_summarize_event(event)))
                     data = event.get("data") or {}
                     if data.get("event_type") != "chat.received":
                         continue
@@ -494,6 +512,13 @@ class XChatBot:
                         continue
 
                     message = as_dict(decrypted)
+                    if self._trace_events:
+                        logger.debug(
+                            "decrypted_message conv_id=%s type=%s keys=%s",
+                            conv_id,
+                            message.get("type"),
+                            sorted([k for k in message.keys() if isinstance(k, str)])[:50],
+                        )
                     text = _get_text_message(message)
                     if text is None:
                         logger.debug(

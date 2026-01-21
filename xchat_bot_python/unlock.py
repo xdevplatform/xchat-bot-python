@@ -3,13 +3,14 @@ from __future__ import annotations
 import getpass
 import json
 import logging
+import time
 
 from chat_xdk import Chat
 from xdk import Client
 
 from .env import load_env
 from .state import load_state, save_state
-from .util import redact_secret, truthy_env
+from .util import redact_secret, safe_json, truthy_env
 
 
 def _as_dict(obj) -> dict:
@@ -84,6 +85,12 @@ def main() -> None:
     if not token:
         raise SystemExit("Missing oauth_token in state.json. Run xchat-bot-login first.")
 
+    logger.info(
+        "unlock_start send_base_url=%s oauth_access_token=%s",
+        env.get("XCHAT_SEND_BASE_URL", "https://api.x.com"),
+        redact_secret((token or {}).get("access_token")),
+    )
+
     client = Client(
         base_url=env.get("XCHAT_SEND_BASE_URL", "https://api.x.com"),
         token=token,
@@ -98,6 +105,8 @@ def main() -> None:
     user_id = (me.get("data") or {}).get("id")
     if not user_id:
         raise SystemExit("Could not resolve user id from /2/users/me")
+
+    logger.info("unlock_me_resolved user_id=%s", user_id)
 
     fields = ["version", "public_key", "signing_public_key", "juicebox_config"]
     pk = _get_public_keys(client, str(user_id), fields)
@@ -132,22 +141,31 @@ def main() -> None:
         signing_key_version,
     )
     if truthy_env(env.get("XCHAT_DEBUG")):
+        logger.debug("unlock public_keys_response_keys=%s", sorted(list((data or {}).keys())))
         logger.debug(
             "unlock juicebox_config_summary=%s",
-            json.dumps(_summarize_juicebox_config(juicebox_config)),
+            safe_json(_summarize_juicebox_config(juicebox_config)),
         )
 
     pin = env.get("XCHAT_PIN") or getpass.getpass("XChat PIN: ")
     chat = Chat()
     try:
+        start = time.time()
+        logger.info("unlock_attempt start")
         chat.unlock(pin, juicebox_config)
+        logger.info("unlock_success duration_ms=%d", int((time.time() - start) * 1000))
     except Exception as e:
         # chat_xdk surfaces Juicebox failures as ValueError with message text.
-        logger.error("unlock failed: %r", e)
+        logger.exception("unlock_failed err=%r", e)
         msg = str(e)
         if "Rate limit exceeded" in msg:
             logger.error(
-                "Juicebox rate limit hit. Wait before retrying to avoid extending cooldown."
+                "juicebox_rate_limited: backend returned RateLimitExceeded (likely HTTP 429). "
+                "Stop retrying; wait before attempting unlock again to avoid extending cooldown."
+            )
+        if "Invalid PIN" in msg or "invalid pin" in msg.lower():
+            logger.error(
+                "unlock_invalid_pin: do NOT brute force. Each failed attempt consumes guesses and may trigger rate limiting."
             )
         raise
     private_keys = chat.export_keys()
