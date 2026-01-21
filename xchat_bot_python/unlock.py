@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import getpass
 import json
+import logging
 
 from chat_xdk import Chat
 from xdk import Client
 
 from .env import load_env
 from .state import load_state, save_state
+from .util import redact_secret, truthy_env
 
 
 def _as_dict(obj) -> dict:
@@ -17,6 +19,49 @@ def _as_dict(obj) -> dict:
         return dict(obj)
     except Exception:
         return {}
+
+
+logger = logging.getLogger("xchat_bot")
+
+
+def _configure_logging(env: dict) -> None:
+    # Enable with XCHAT_DEBUG=1
+    level = logging.DEBUG if truthy_env(env.get("XCHAT_DEBUG")) else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+
+def _summarize_juicebox_config(juicebox_config: str) -> dict:
+    """Parse juicebox_config JSON and return a safe-to-log summary."""
+    try:
+        outer = json.loads(juicebox_config)
+    except Exception:
+        return {"parse_error": "invalid_json"}
+    summary: dict = {
+        "max_guess_count": outer.get("max_guess_count"),
+        "token_realm_count": len((outer.get("tokens") or {}).keys()),
+    }
+    sdk_cfg_raw = outer.get("sdk_config")
+    if isinstance(sdk_cfg_raw, str):
+        try:
+            sdk_cfg = json.loads(sdk_cfg_raw)
+            realms = sdk_cfg.get("realms") or []
+            summary.update(
+                {
+                    "realm_count": len(realms),
+                    "realm_addresses": [
+                        r.get("address") for r in realms if isinstance(r, dict)
+                    ],
+                    "register_threshold": sdk_cfg.get("register_threshold"),
+                    "recover_threshold": sdk_cfg.get("recover_threshold"),
+                    "pin_hashing_mode": sdk_cfg.get("pin_hashing_mode"),
+                }
+            )
+        except Exception:
+            summary["sdk_config_parse_error"] = "invalid_json"
+    return summary
 
 
 def _get_public_keys(client: Client, user_id: str, fields: list[str]) -> dict:
@@ -33,6 +78,7 @@ def _get_public_keys(client: Client, user_id: str, fields: list[str]) -> dict:
 
 def main() -> None:
     env = load_env()
+    _configure_logging(env)
     state = load_state()
     token = state.get("oauth_token")
     if not token:
@@ -78,9 +124,32 @@ def main() -> None:
     if not juicebox_config:
         raise SystemExit("Missing juicebox_config in public keys response")
 
+    logger.info(
+        "unlock config send_base_url=%s oauth_access_token=%s user_id=%s signing_key_version=%s",
+        env.get("XCHAT_SEND_BASE_URL", "https://api.x.com"),
+        redact_secret((token or {}).get("access_token")),
+        user_id,
+        signing_key_version,
+    )
+    if truthy_env(env.get("XCHAT_DEBUG")):
+        logger.debug(
+            "unlock juicebox_config_summary=%s",
+            json.dumps(_summarize_juicebox_config(juicebox_config)),
+        )
+
     pin = env.get("XCHAT_PIN") or getpass.getpass("XChat PIN: ")
     chat = Chat()
-    chat.unlock(pin, juicebox_config)
+    try:
+        chat.unlock(pin, juicebox_config)
+    except Exception as e:
+        # chat_xdk surfaces Juicebox failures as ValueError with message text.
+        logger.error("unlock failed: %r", e)
+        msg = str(e)
+        if "Rate limit exceeded" in msg:
+            logger.error(
+                "Juicebox rate limit hit. Wait before retrying to avoid extending cooldown."
+            )
+        raise
     private_keys = chat.export_keys()
     if not private_keys:
         raise SystemExit("Unlock succeeded but no private keys were exported")

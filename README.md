@@ -89,6 +89,46 @@ uv run xchat-bot-run
 The bot connects to the Activity Stream using `BEARER_TOKEN`, decrypts incoming
 messages using `private_keys`, and replies using the OAuth2 user token.
 
+## Writing commands (decorators)
+
+This project supports a Discord.py-like decorator style for commands/events. You
+can create a separate bot module and register handlers (see
+`xchat_bot_python/decorator_example_bot.py`):
+
+```python
+from xchat_bot_python.decorators_bot import Context, XChatBot
+
+bot = XChatBot(command_prefix="!")
+
+@bot.command("ping")
+async def ping(ctx: Context) -> None:
+    await ctx.reply_async("pong")
+
+@bot.command("echo")
+def echo(ctx: Context) -> None:
+    ctx.reply(" ".join(ctx.args))
+
+@bot.event
+def on_message(ctx: Context) -> None:
+    # Runs for every decrypted Text message (commands and non-commands).
+    ...
+
+bot.run()
+```
+
+Notes:
+
+- Commands are **prefix-based**. With `command_prefix="!"`, a message like
+  `!echo hello world` maps to command `echo` with args `["hello", "world"]`.
+- Handlers can be either `def` or `async def`.
+- Use `ctx.reply(...)` (sync) or `await ctx.reply_async(...)` (async).
+
+To run the decorator example:
+
+```bash
+uv run python -m xchat_bot_python.decorator_example_bot
+```
+
 ## Notes
 
 - `state.json` contains tokens and keys. Keep it local and uncommitted.

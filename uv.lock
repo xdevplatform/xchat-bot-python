@@ -335,13 +335,13 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "chat-xdk", editable = "../chat-xdk/crates/pyo3" },
-    { name = "xdk", editable = "../xdk-python" },
+    { name = "xdk", editable = "../xdk/xdk/python" },
 ]
 
 [[package]]
 name = "xdk"
 version = "0.5.0"
-source = { editable = "../xdk-python" }
+source = { editable = "../xdk/xdk/python" }
 dependencies = [
     { name = "pydantic" },
     { name = "requests" },

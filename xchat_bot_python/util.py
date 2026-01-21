@@ -12,6 +12,19 @@ def as_dict(obj) -> dict:
         return {}
 
 
+def redact_secret(value: str | None, *, keep_start: int = 6, keep_end: int = 4) -> str:
+    """Return a redacted representation of a secret for logs."""
+    if not value:
+        return "<missing>"
+    if len(value) <= keep_start + keep_end + 3:
+        return "<redacted>"
+    return f"{value[:keep_start]}…{value[-keep_end:]}"
+
+
+def truthy_env(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
 def pick_decryptable_key(
     chat: Chat, key_change_event: str | None
 ) -> tuple[str | None, str | None]:

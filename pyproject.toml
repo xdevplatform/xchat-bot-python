@@ -22,6 +22,6 @@ build-backend = "hatchling.build"
 packages = ["xchat_bot_python"]
 
 [tool.uv.sources]
-xdk = { path = "../xdk-python", editable = true }
+xdk = { path = "../xdk/xdk/python", editable = true }
 chat-xdk = { path = "../chat-xdk/crates/pyo3", editable = true }
 
