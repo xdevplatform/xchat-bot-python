@@ -7,12 +7,15 @@ requires-python = ">=3.10"
 dependencies = [
   "xdk",
   "chat-xdk",
+  "xai-sdk",
 ]
 
 [project.scripts]
 xchat-bot-login = "xchat_bot_python.login:main"
 xchat-bot-unlock = "xchat_bot_python.unlock:main"
 xchat-bot-run = "xchat_bot_python.bot:main"
+xchat-bot-run-grok = "xchat_bot_python.bot_grok:main"
+xchat-bot-run-react = "xchat_bot_python.bot_react:main"
 
 [build-system]
 requires = ["hatchling"]

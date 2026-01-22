@@ -7,11 +7,12 @@ from .bot_common import (
     decrypt_message_event,
     get_event_uuid,
     get_message_id,
+    get_message_sequence_id,
     get_text_message,
     load_runtime_state,
     load_seen_event_uuids,
     persist_seen_event_uuids,
-    send_reply,
+    send_reaction,
     should_reply,
     stream_config,
 )
@@ -50,7 +51,10 @@ def main() -> None:
         if not message or not conv_id or not key_version:
             continue
         message_id = get_message_id(message) or "unknown"
-        print(f"Received message {message_id} in {conv_id}")
+        message_sequence_id = get_message_sequence_id(message) or "unknown"
+        print(
+            f"Received message {message_id} seq={message_sequence_id} in {conv_id}"
+        )
         text = get_text_message(message)
         if text is None:
             continue
@@ -59,21 +63,30 @@ def main() -> None:
             continue
         if not should_reply(str(conv_id), text):
             continue
-        reply = f"received {text}"
-        send_reply(
-            chat=chat,
-            send_client=send_client,
-            user_id=str(user_id),
-            signing_key_version=str(signing_key_version),
-            conv_id=str(conv_id),
-            conv_token=payload.get("conversation_token"),
-            enc_key=enc_key_cache[conv_id],
-            key_version=str(key_version),
-            reply=reply,
+
+        target_sequence_id = (
+            message_sequence_id if message_sequence_id != "unknown" else message_id
         )
-        print(f"Replied to {conv_id}: {reply}")
+        if target_sequence_id == "unknown":
+            continue
+        try:
+            send_reaction(
+                chat=chat,
+                send_client=send_client,
+                user_id=str(user_id),
+                signing_key_version=str(signing_key_version),
+                conv_id=str(conv_id),
+                conv_token=payload.get("conversation_token"),
+                enc_key=enc_key_cache[conv_id],
+                key_version=str(key_version),
+                target_message_sequence_id=str(target_sequence_id),
+                emoji="👀",
+                remove=False,
+            )
+            print(f"Reacted to {conv_id}: 👀")
+        except Exception as exc:
+            print(f"Reaction failed: {exc!r}")
 
 
 if __name__ == "__main__":
     main()
-

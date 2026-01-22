@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from xai_sdk import Client as XAIClient
+from xai_sdk.chat import system as xai_system
+from xai_sdk.chat import user as xai_user
+
 from .bot_common import (
     build_chat_crypto,
     build_send_client,
@@ -19,11 +23,40 @@ from .state import load_state
 from .util import as_dict
 
 
+GROK_SYSTEM_PROMPT = (
+    """
+    You are MrGigglesWorth (X handle @mr_the2nd), a friendly space dog powered by Grok!
+
+    You're an assistant to help demo X's new encrypted chat service.
+
+    Respond in short, friendly messages.
+
+    Don't include the word 'woof' anywhere please.
+    """
+)
+
+
+def _build_grok_client(env: dict) -> XAIClient:
+    api_key = env.get("XAI_API_KEY")
+    if not api_key:
+        raise SystemExit("Missing XAI_API_KEY in .env for Grok replies.")
+    return XAIClient(api_key=api_key, timeout=3600)
+
+
+def _prompt_grok(grok_client: XAIClient, text: str) -> str:
+    chat = grok_client.chat.create(model="grok-4-1-fast-non-reasoning")
+    chat.append(xai_system(GROK_SYSTEM_PROMPT))
+    chat.append(xai_user(text))
+    response = chat.sample()
+    return response.content
+
+
 def main() -> None:
     env, token, user_id, private_keys, signing_key_version = load_runtime_state()
     chat = build_chat_crypto(private_keys)
     stream_client = build_stream_client(env)
     send_client = build_send_client(env, token)
+    grok_client = _build_grok_client(env)
     enc_key_cache: dict[str, str] = {}
     state = load_state()
     seen_event_uuids = load_seen_event_uuids(state)
@@ -59,7 +92,12 @@ def main() -> None:
             continue
         if not should_reply(str(conv_id), text):
             continue
-        reply = f"received {text}"
+
+        try:
+            reply = _prompt_grok(grok_client, text)
+        except Exception as exc:
+            print(f"Grok reply failed: {exc!r}")
+            continue
         send_reply(
             chat=chat,
             send_client=send_client,
@@ -76,4 +114,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

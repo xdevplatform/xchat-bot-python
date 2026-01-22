@@ -80,13 +80,33 @@ xurl -X POST --auth oauth2 "/2/activity/subscriptions" -d \
   '{"event_type": "chat.received", "filter": {"user_id": "{id}"}, "tag": "bot received messages"}'
 ```
 
-## Step 4: Run the bot
+## Step 4: Run a bot
+
+Bare-bones echo bot:
 
 ```bash
 uv run xchat-bot-run
 ```
 
-The bot connects to the Activity Stream using `BEARER_TOKEN`, decrypts incoming
+Grok-powered bot:
+
+```bash
+uv run xchat-bot-run-grok
+```
+
+Reaction-only bot (👀 read-receipt reaction):
+
+```bash
+uv run xchat-bot-run-react
+```
+
+## Bot behavior
+
+- `xchat-bot-run`: replies with `received <text>`
+- `xchat-bot-run-grok`: replies with a Grok response
+- `xchat-bot-run-react`: reacts with 👀 to messages it would reply to (uses message sequence_id)
+
+Each bot connects to the Activity Stream using `BEARER_TOKEN`, decrypts incoming
 messages using `private_keys`, and replies using the OAuth2 user token.
 
 ## Notes
