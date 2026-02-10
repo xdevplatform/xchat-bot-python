@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import sys
 import uuid
 from typing import Optional
 
@@ -54,6 +56,10 @@ def build_send_client(env: dict, token: dict) -> Client:
     return client
 
 
+def is_verbose() -> bool:
+    return "--verbose" in sys.argv
+
+
 def stream_config() -> StreamConfig:
     return StreamConfig(
         max_retries=-1,
@@ -72,6 +78,16 @@ def get_text_message(event: dict) -> Optional[str]:
     if content.get("content_type") != "Text":
         return None
     return content.get("text") or ""
+
+
+def get_message_attachments(event: dict) -> list[dict]:
+    if event.get("type") != "Message":
+        return []
+    content = event.get("content") or {}
+    attachments = content.get("attachments") or []
+    if isinstance(attachments, list):
+        return [att for att in attachments if isinstance(att, dict)]
+    return []
 
 
 def get_message_id(event: dict) -> Optional[str]:
@@ -239,4 +255,9 @@ def decrypt_message_event(
     enc_key_cache[conv_id] = enc_key
 
     message = as_dict(chat.decrypt_event(encoded_event, enc_key))
+    if is_verbose():
+        print(
+            "Decoded message event:",
+            json.dumps(message, indent=2, sort_keys=True, default=str),
+        )
     return message, str(conv_id), str(key_version)

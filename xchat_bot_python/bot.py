@@ -6,8 +6,10 @@ from .bot_common import (
     build_stream_client,
     decrypt_message_event,
     get_event_uuid,
+    get_message_attachments,
     get_message_id,
     get_text_message,
+    is_verbose,
     load_runtime_state,
     load_seen_event_uuids,
     persist_seen_event_uuids,
@@ -34,6 +36,8 @@ def main() -> None:
         data = event.get("data") or {}
         if data.get("event_type") != "chat.received":
             continue
+        if is_verbose():
+            print("chat.received event data:", as_dict(data))
         event_uuid = get_event_uuid(event, data) or "unknown"
         print(f"Received event {event_uuid}")
         if event_uuid != "unknown":
@@ -52,7 +56,12 @@ def main() -> None:
         message_id = get_message_id(message) or "unknown"
         print(f"Received message {message_id} in {conv_id}")
         text = get_text_message(message)
-        if text is None:
+        attachments = get_message_attachments(message)
+        if attachments:
+            print(f"Received {len(attachments)} attachment(s)")
+            for attachment in attachments:
+                print(f"Attachment: {attachment}")
+        if text is None and not attachments:
             continue
         sender_id = message.get("sender_id") or message.get("senderId")
         if sender_id and str(sender_id) == str(user_id):

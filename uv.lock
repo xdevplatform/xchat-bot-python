@@ -273,6 +273,12 @@ wheels = [
 name = "chat-xdk"
 version = "0.1.0"
 source = { editable = "../chat-xdk/crates/pyo3" }
+dependencies = [
+    { name = "xdk" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "xdk" }]
 
 [[package]]
 name = "frozenlist"

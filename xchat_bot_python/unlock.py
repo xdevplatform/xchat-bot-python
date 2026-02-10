@@ -56,6 +56,9 @@ def main() -> None:
     fields = ["version", "public_key", "signing_public_key", "juicebox_config"]
     pk = _get_public_keys(client, str(user_id), fields)
     data = pk.get("data") or {}
+    # The API may return data as a list; unwrap the first element if so.
+    if isinstance(data, list):
+        data = data[0] if data else {}
     juicebox_config = data.get("juicebox_config")
     if isinstance(juicebox_config, dict):
         token_map = juicebox_config.get("token_map") or []
