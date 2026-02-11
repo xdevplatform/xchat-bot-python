@@ -13,6 +13,7 @@ Authors: The X Developer API Team
 - [Request / Response Guide](#request-response)
     - [Getting User Messages](#getting-user-messages)
     - [Sending User Messages](#sending-messages)
+    - [Sending Media Attachments](#sending-media-attachments)
 - [Streaming / Automated Replies Guide](#streaming--automated-responses)
     - [The X Activity API](#the-x-activity-api)
     - [Creating a Reply Bot](#creating-a-reply-bot)
@@ -47,6 +48,9 @@ However, you _will_ need to store the numeric PINs for your users in a secure fa
 | `GET` | `/2/chat/conversations` | User OAuth | Retrieves a list of Chat conversations for the authenticated user’s inbox |
 | `GET` | `/2/chat/conversations/{conversation_id}` | User OAuth | Retrieves messages and key change events for a specific Chat conversation with pagination support | 
 | `POST` | `/2/chat/conversations/{conversation_id}/messages` | User OAuth | Send an encrypted message on behalf of a user to a specific chat conversation |
+| `POST` | `/2/chat/media/upload/initialize` | User OAuth | Initialize a media upload session for a chat media attachment. Returns a `session_id` and `media_hash_key` |
+| `POST` | `/2/chat/media/upload/{session_id}/append` | User OAuth | Append media data (base64-encoded) to an in-progress upload session |
+| `POST` | `/2/chat/media/upload/{session_id}/finalize` | User OAuth | Finalize a media upload session, making the media available for use in a chat message |
 
 ## The XDKs
 
@@ -64,6 +68,79 @@ We have a separate XDK for handling chat encryption/decryption. You can find it 
 | Language | Package | Repo |
 | --- | --- | --- |
 | Rust w/ Python Bindings | Still in security review for release. You will have to clone the repo and build from source in its current state. Build instructions are included in the README | [chat-xdk](https://github.com/xdevplatform/chat-xdk) |
+
+The chat-xdk also ships a high-level **bot SDK** (`XChatBot`) that handles OAuth login, key unlocking, activity stream consumption, media upload/download, and Grok-powered replies automatically. The bot SDK is available in both Python and TypeScript.
+
+#### Python
+
+```bash
+pip install chat-xdk   # or add to pyproject.toml / requirements.txt
+uv run python bot.py
+```
+
+```python
+from chat_xdk import Context, XChatBot, XChatBotConfig
+
+config = XChatBotConfig(
+    bearer_token="...",
+    client_id="...",
+    client_secret="...",
+    oauth1_api_key="...",
+    oauth1_api_secret="...",
+    oauth1_access_token="...",
+    oauth1_access_token_secret="...",
+    pin="1234",
+    xai_api_key="...",
+)
+
+bot = XChatBot(command_prefix="!", config=config)
+
+@bot.event(system_prompt="You are a helpful assistant.")
+async def on_message(ctx: Context) -> None:
+    await ctx.reply_async_grok_smart(ctx.text, images=ctx.images(), files=ctx.files())
+
+bot.run()
+```
+
+#### TypeScript / JavaScript
+
+```bash
+npm install chat-xdk   # installs the WASM-based JS package
+npm run bot             # runs the bot entry point
+```
+
+```js
+import { XChatBot, XChatBotConfig } from "chat-xdk/bot";
+
+const config = new XChatBotConfig({
+  bearer_token: "...",
+  client_id: "...",
+  client_secret: "...",
+  oauth1_api_key: "...",
+  oauth1_api_secret: "...",
+  oauth1_access_token: "...",
+  oauth1_access_token_secret: "...",
+  pin: "1234",
+  xai_api_key: "...",
+});
+
+const bot = new XChatBot({ command_prefix: "!", config });
+
+bot.event({
+  system_prompt: "You are a helpful assistant.",
+})(async function on_message(ctx) {
+  await ctx.replyAsyncGrokSmart(ctx.text, {
+    images: ctx.images(),
+    files: ctx.files(),
+  });
+});
+
+bot.run();
+```
+
+Both SDKs provide the same decorator-based interface with convenience methods such as `ctx.reply()`, `ctx.images()`, and `ctx.files()` for working with incoming media attachments, as well as built-in Grok integration for AI-powered replies (text, image generation, and video generation).
+
+With the bot SDK you can build chat agents that respond to messages with Grok, generate images and videos on demand, read and understand attached files and photos, and connect to external services via MCP tool servers to take real-world actions like sending emails, creating calendar events, or querying databases — all within encrypted DMs. To learn more, check out our demos: [xchat-agents-demo](https://github.com/xdevplatform/xchat-agents-demo)
 
 ## Request / Response Guide
 
@@ -105,6 +182,22 @@ The flow for sending messages on behalf of your users is roughly the same, just 
 The user will send their message to your app, your app will encrypt using the XDK with their private key, and then use the POST endpoint to send.
 
 This exact flow will be used if the user is manually requesting to send messages via your app. See the streaming section for automated replies.
+
+### Sending Media Attachments
+
+Chat messages can include media attachments such as images. Sending media follows a 3-step upload flow before the message itself is sent:
+
+1. **Initialize** — `POST /2/chat/media/upload/initialize` with the total byte size of the media. The response includes a `session_id` and a `media_hash_key`.
+
+2. **Append** — `POST /2/chat/media/upload/{session_id}/append` with the base64-encoded media bytes along with the `media_hash_key` returned from the initialize step.
+
+3. **Finalize** — `POST /2/chat/media/upload/{session_id}/finalize` with the `media_hash_key`. Once finalized, the media is ready to be referenced in a chat message.
+
+After the upload is finalized, you'll use the `media_hash_key` to construct an encrypted message with a media attachment via `chat.encrypt_message_with_media_for_api()` in the chat-xdk. This method builds the encrypted payload with the attachment metadata (hash key, dimensions, filename, etc.), which you then send via the existing `POST /2/chat/conversations/{conversation_id}/messages` endpoint.
+
+**Receiving media** works in reverse: when a decrypted message contains media attachments, you can extract the `media_hash_key` from the attachment metadata and fetch the encrypted media bytes from `https://ton.x.com/1.1/ton/data/xchat_media/{conversation_id}/{media_hash_key}`. The chat-xdk provides helpers to decrypt the fetched media bytes.
+
+> **Bot SDK shortcut**: If you're using the `XChatBot` bot SDK, media upload and download is handled for you automatically. The `Context` object provides `ctx.images()` and `ctx.files()` to access incoming media, and methods like `ctx.reply_async_grok_image()` handle the full upload-encrypt-send flow internally.
 
 ## Streaming / Automated Responses
 

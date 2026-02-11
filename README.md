@@ -82,6 +82,8 @@ xurl -X POST --auth oauth2 "/2/activity/subscriptions" -d \
 
 ## Step 4: Run a bot
 
+### Python
+
 Bare-bones echo bot:
 
 ```bash
@@ -100,11 +102,31 @@ Reaction-only bot (👀 read-receipt reaction):
 uv run xchat-bot-run-react
 ```
 
+### JavaScript
+
+The `xchat_bot_js/` directory contains a JavaScript equivalent using the WASM-based chat-xdk.
+
+Install dependencies:
+
+```bash
+cd xchat_bot_js
+npm install
+```
+
+Run the bot:
+
+```bash
+npm run bot
+```
+
+The JS bot uses the same `XChatBot` / `XChatBotConfig` interface from `chat-xdk/bot`. Configuration is provided inline via the `XChatBotConfig` constructor. See `xchat_bot_js/decorator_example_bot.js` for a full example.
+
 ## Bot behavior
 
-- `xchat-bot-run`: replies with `received <text>`
-- `xchat-bot-run-grok`: replies with a Grok response
-- `xchat-bot-run-react`: reacts with 👀 to messages it would reply to (uses message sequence_id)
+- `xchat-bot-run` (Python): replies with `received <text>`
+- `xchat-bot-run-grok` (Python): replies with a Grok response
+- `xchat-bot-run-react` (Python): reacts with 👀 to messages it would reply to (uses message sequence_id)
+- `npm run bot` (JS): replies via Grok with smart routing (text, image generation, or video generation)
 
 Each bot connects to the Activity Stream using `BEARER_TOKEN`, decrypts incoming
 messages using `private_keys`, and replies using the OAuth2 user token.
