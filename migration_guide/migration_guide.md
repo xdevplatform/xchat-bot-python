@@ -1,5 +1,9 @@
 # XChat Enterprise User Migration Guide
 
+Date Created: February 11, 2026
+
+Authors: The X Developer API Team
+
 ## Table of Contents
 
 - [Background / Rationale](#background)
