@@ -164,10 +164,10 @@ This section covers other important information about the new Chat service that 
 
 ### Conversation IDs and Groupchats
 
-For reply bots in particular, it may be helpful to distinguish whether you are replying to message from a direct user, or from a groupchat.
+For reply bots in particular, it may be helpful to distinguish whether you are replying to a message from a direct user, or from a groupchat.
 
 For example, you'll want to reply to any messages received in a one-on-one conversation between a customer and your reply bot, but in groupchats you may only want to reply when the bot is tagged (i.e. @bot_username)
 
-To make this distinction, you can use the conversation id. Conversation ids in a one-to-one conversation with simply be the two user ids separate by a dash, for example: `123456789-987654321` is a conversation between user `123456789` and user `987654321`.
+To make this distinction, you can use the conversation id. Conversation ids in a one-to-one conversation will simply be the two user ids separate by a dash, for example: `123456789-987654321` is a conversation between user `123456789` and user `987654321`.
 
 Groupchats on the other hand have their own unique ids, and are prefixed by a `g`, for example `g123456789`. The ID does not contain any other relevant information in terms of receipients, but the `g` can be used to tell quickly if the message is coming from a groupchat or not.
