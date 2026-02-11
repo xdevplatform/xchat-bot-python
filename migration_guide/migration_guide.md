@@ -50,7 +50,7 @@ However, you _will_ need to store the numeric PINs for your users in a secure fa
 
 ## The XDKs
 
-X offers SDKs (XDKs) to make interacting with our API easier, including handling the encryption/decryption logic for chat.
+X offers XDKs to make interacting with our API easier, including handling the encryption/decryption logic for chat.
 
 Our general XDK for handling auth, sending requests, opening streams, registering webhooks, etc. are supported in Python and TypeScript:
 
