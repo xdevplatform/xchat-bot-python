@@ -1031,37 +1031,22 @@ dependencies = [
 requires-dist = [
     { name = "chat-xdk", editable = "../chat-xdk/crates/pyo3" },
     { name = "xai-sdk" },
-    { name = "xdk", editable = "../xdk-python" },
+    { name = "xdk", specifier = ">=0.6.0" },
 ]
 
 [[package]]
 name = "xdk"
-version = "0.5.0"
-source = { editable = "../xdk-python" }
+version = "0.8.1"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "requests" },
     { name = "requests-oauthlib" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "black", marker = "extra == 'dev'" },
-    { name = "myst-parser", marker = "extra == 'dev'", specifier = ">=2.0.0" },
-    { name = "pydantic", specifier = ">=2.0.0" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-cov", marker = "extra == 'dev'" },
-    { name = "requests", specifier = ">=2.25.0" },
-    { name = "requests-oauthlib", specifier = ">=1.3.0" },
-    { name = "ruff", marker = "extra == 'dev'" },
-    { name = "sphinx", marker = "extra == 'dev'", specifier = ">=7.0.0" },
-    { name = "sphinx-markdown-builder", marker = "extra == 'dev'", specifier = ">=0.5.5" },
-    { name = "watchdog", marker = "extra == 'dev'", specifier = ">=3.0.0" },
+sdist = { url = "https://files.pythonhosted.org/packages/e3/e4/c9fed3ed0f1d00804a4d23105b17e6c85fbafff2c5ded1fe50a31defdb06/xdk-0.8.1.tar.gz", hash = "sha256:1caef03457eef382ce31cab16d4ae27672c51c1aceca405f966957bbb2492f80", size = 396370, upload-time = "2026-02-12T03:17:26.045Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/65/dd/8a7770e470c17ef251ae1ee914ef793aa322bcd80ec221479cb1fcedbce8/xdk-0.8.1-py3-none-any.whl", hash = "sha256:e61633804a63130b0940b275cb3898d892f9206183d74dd72b106b87272eb613", size = 167501, upload-time = "2026-02-12T03:17:24.007Z" },
 ]
-provides-extras = ["dev"]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
 
 [[package]]
 name = "yarl"

@@ -5,11 +5,10 @@ needs (tokens, keys, env) lives in this directory.
 
 ## Directory layout
 
-This example expects the XDK repos to be sibling directories:
+This example expects the XDK repos to be sibling directories (since chat-xdk is not released yet):
 
 ```
 <parent>/
-  xdk-python/
   chat-xdk/
   xchat-bot-python/
 ```
