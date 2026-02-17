@@ -1,4 +1,6 @@
-# XChat Enterprise User Migration Guide
+# XChat Enterprise User Migration Guide v1
+
+> NOTE: This product is currently in a beta state. While we don't anticipate any major changes to the release version, please bear with us as we smooth out rough edges. Please don't hesitate to reach out if something doesn't look right.
 
 Date Created: February 11, 2026
 
@@ -30,7 +32,7 @@ This guide aims to make the transition (or new adoption) as easy as possible.
 
 ### The Key Change
 
-The largest change is that the message stack is fully e2e encrypted. This means when you request messages for an authorized user, your app will receive an encrypted payload.
+The largest change is that the message stack is fully e2e encrypted. This means when you request messages, attachments, media, etc. for an authorized user, your app will receive an encrypted payload.
 
 This requires the client application to perform decryption.
 
@@ -42,15 +44,22 @@ However, you _will_ need to store the numeric PINs for your users in a secure fa
 
 ## New Routes
 
-| Method | Route | Auth | Description |
-| --- | --- | --- | --- |
-| `GET` | `/2/users/{id}/public_keys` | User OAuth | Returns the public keys and Juicebox configuration for the specified user |
-| `GET` | `/2/chat/conversations` | User OAuth | Retrieves a list of Chat conversations for the authenticated user’s inbox |
-| `GET` | `/2/chat/conversations/{conversation_id}` | User OAuth | Retrieves messages and key change events for a specific Chat conversation with pagination support | 
-| `POST` | `/2/chat/conversations/{conversation_id}/messages` | User OAuth | Send an encrypted message on behalf of a user to a specific chat conversation |
-| `POST` | `/2/chat/media/upload/initialize` | User OAuth | Initialize a media upload session for a chat media attachment. Returns a `session_id` and `media_hash_key` |
-| `POST` | `/2/chat/media/upload/{session_id}/append` | User OAuth | Append media data (base64-encoded) to an in-progress upload session |
-| `POST` | `/2/chat/media/upload/{session_id}/finalize` | User OAuth | Finalize a media upload session, making the media available for use in a chat message |
+| Method | Route | Auth | Description | Docs |
+| --- | --- | --- | --- | --- |
+| `GET` | `/2/users/{id}/public_keys` | User OAuth | Returns the public keys and Juicebox configuration for the specified user | https://docs.x.com/x-api/chat/get-user-public-keys#get-user-public-keys |
+| `GET` | `/2/chat/conversations` | User OAuth | Retrieves a list of Chat conversations for the authenticated user’s inbox | https://docs.x.com/x-api/chat/get-chat-conversations#get-chat-conversations |
+| `GET` | `/2/chat/conversations/{conversation_id}` | User OAuth | Retrieves messages and key change events for a specific Chat conversation with pagination support | https://docs.x.com/x-api/chat/get-chat-conversation#get-chat-conversation |
+| `POST` | `/2/chat/conversations/{conversation_id}/messages` | User OAuth | Send an encrypted message on behalf of a user to a specific chat conversation | https://docs.x.com/x-api/chat/send-chat-message#send-chat-message |
+| `POST` | `/2/chat/media/upload/initialize` | User OAuth | Initialize a media upload session for a chat media attachment. Returns a `session_id` and `media_hash_key` | NOT YET IN PROD. COMING SOON. |
+| `POST` | `/2/chat/media/upload/{session_id}/append` | User OAuth | Append media data (base64-encoded) to an in-progress upload session | NOT YET IN PROD. COMING SOON. |
+| `POST` | `/2/chat/media/upload/{session_id}/finalize` | User OAuth | Finalize a media upload session, making the media available for use in a chat message | NOT YET IN PROD. COMING SOON. |
+
+## Legacy DM Routes
+
+These routes do not support XChat messages. They can still be used to receive legacy DMs if your customers have not upgraded, but encrypted messages cannot be received or sent through these routes:
+
+- Any routes pertaining to `/2/dm_events/...`
+- Account activity routes: `/2/account_activity/...`
 
 ## The XDKs
 
