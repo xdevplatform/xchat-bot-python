@@ -154,14 +154,14 @@ Check out our docs for a reference: [OAuth 2.0 Flow with PKCE](https://docs.x.co
 
 ### Getting User Messages
 
-| ![Get User Chat Messsage Flow](./Chat_Get_Messages.png) |
+| ![Get User Chat Messsage Flow](https://github.com/xdevplatform/xchat-bot-python/blob/main/migration_guide/Chat_Get_Messages.png) |
 |:--:|
 | Flow for retrieving user messages |
 
 - a. User OAuth2 flow
 - b. Your client app needs to request the user's XChat PIN. This is the numeric PIN they set up when using the Chat feature within the X app:
 
-| ![User PIN Prompt](./User_PIN.png) |
+| ![User PIN Prompt](https://github.com/xdevplatform/xchat-bot-python/blob/main/migration_guide/User_PIN.png) |
 |:--:|
 | User PIN Prompt |
 
@@ -173,7 +173,7 @@ Check out our docs for a reference: [OAuth 2.0 Flow with PKCE](https://docs.x.co
 
 ### Sending Messages
 
-| ![Send User Chat Messsage Flow](./Chat_Send_Messages.png) |
+| ![Send User Chat Messsage Flow](https://github.com/xdevplatform/xchat-bot-python/blob/main/migration_guide/Chat_Send_Messages.png) |
 |:--:|
 | Flow for sending user messages |
 
@@ -237,7 +237,7 @@ If you'd prefer, the X Activity API also supports webhook delivery. When creatin
 
 To create the chat bot, you'll create an app that consumes from the activity stream (or webhook), and then set up reply logic when an event is received, using the appropriate users' keys.
 
-| ![Automated Messsage Flow](./Chat_Automated.png) |
+| ![Automated Messsage Flow](https://github.com/xdevplatform/xchat-bot-python/blob/main/migration_guide/Chat_Automated.png) |
 |:--:|
 | A sample flow for reply bot |
 
