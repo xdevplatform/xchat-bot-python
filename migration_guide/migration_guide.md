@@ -69,78 +69,7 @@ We have a separate XDK for handling chat encryption/decryption. You can find it 
 | --- | --- | --- |
 | Rust w/ Python Bindings | Still in security review for release. You will have to clone the repo and build from source in its current state. Build instructions are included in the README | [chat-xdk](https://github.com/xdevplatform/chat-xdk) |
 
-The chat-xdk also ships a high-level **bot SDK** (`XChatBot`) that handles OAuth login, key unlocking, activity stream consumption, media upload/download, and Grok-powered replies automatically. The bot SDK is available in both Python and TypeScript.
-
-#### Python
-
-```bash
-pip install chat-xdk   # or add to pyproject.toml / requirements.txt
-uv run python bot.py
-```
-
-```python
-from chat_xdk import Context, XChatBot, XChatBotConfig
-
-config = XChatBotConfig(
-    bearer_token="...",
-    client_id="...",
-    client_secret="...",
-    oauth1_api_key="...",
-    oauth1_api_secret="...",
-    oauth1_access_token="...",
-    oauth1_access_token_secret="...",
-    pin="1234",
-    xai_api_key="...",
-)
-
-bot = XChatBot(command_prefix="!", config=config)
-
-@bot.event(system_prompt="You are a helpful assistant.")
-async def on_message(ctx: Context) -> None:
-    await ctx.reply_async_grok_smart(ctx.text, images=ctx.images(), files=ctx.files())
-
-bot.run()
-```
-
-#### TypeScript / JavaScript
-
-```bash
-npm install chat-xdk   # installs the WASM-based JS package
-npm run bot             # runs the bot entry point
-```
-
-```js
-import { XChatBot, XChatBotConfig } from "chat-xdk/bot";
-
-const config = new XChatBotConfig({
-  bearer_token: "...",
-  client_id: "...",
-  client_secret: "...",
-  oauth1_api_key: "...",
-  oauth1_api_secret: "...",
-  oauth1_access_token: "...",
-  oauth1_access_token_secret: "...",
-  pin: "1234",
-  xai_api_key: "...",
-});
-
-const bot = new XChatBot({ command_prefix: "!", config });
-
-bot.event({
-  system_prompt: "You are a helpful assistant.",
-})(async function on_message(ctx) {
-  await ctx.replyAsyncGrokSmart(ctx.text, {
-    images: ctx.images(),
-    files: ctx.files(),
-  });
-});
-
-bot.run();
-```
-
-Both SDKs provide the same decorator-based interface with convenience methods such as `ctx.reply()`, `ctx.images()`, and `ctx.files()` for working with incoming media attachments, as well as built-in Grok integration for AI-powered replies (text, image generation, and video generation).
-
-With the bot SDK you can build chat agents that respond to messages with Grok, generate images and videos on demand, read and understand attached files and photos, and connect to external services via MCP tool servers to take real-world actions like sending emails, creating calendar events, or querying databases — all within encrypted DMs. To learn more, check out our demos: [xchat-agents-demo](https://github.com/xdevplatform/xchat-agents-demo)
+For a complete working example of a bot that uses the chat-xdk with the X Activity API to handle automated replies, see the reference implementation: [xchat-bot-python](https://github.com/xdevplatform/xchat-bot-python)
 
 ## Request / Response Guide
 
@@ -197,8 +126,6 @@ After the upload is finalized, you'll use the `media_hash_key` to construct an e
 
 **Receiving media** works in reverse: when a decrypted message contains media attachments, you can extract the `media_hash_key` from the attachment metadata and fetch the encrypted media bytes from `https://ton.x.com/1.1/ton/data/xchat_media/{conversation_id}/{media_hash_key}`. The chat-xdk provides helpers to decrypt the fetched media bytes.
 
-> **Bot SDK shortcut**: If you're using the `XChatBot` bot SDK, media upload and download is handled for you automatically. The `Context` object provides `ctx.images()` and `ctx.files()` to access incoming media, and methods like `ctx.reply_async_grok_image()` handle the full upload-encrypt-send flow internally.
-
 ## Streaming / Automated Responses
 
 This section will cover how to get messages in real-time and send automatic replies; Great for customer service or reply bots.
@@ -236,6 +163,8 @@ If you'd prefer, the X Activity API also supports webhook delivery. When creatin
 ### Creating a Reply Bot
 
 To create the chat bot, you'll create an app that consumes from the activity stream (or webhook), and then set up reply logic when an event is received, using the appropriate users' keys.
+
+For a complete working example, see the reference implementation: [xchat-bot-python](https://github.com/xdevplatform/xchat-bot-python)
 
 | ![Automated Messsage Flow](https://raw.githubusercontent.com/xdevplatform/xchat-bot-python/refs/heads/main/migration_guide/Chat_Automated.png) |
 |:--:|
