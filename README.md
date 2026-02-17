@@ -71,7 +71,7 @@ This uses `/2/users/:id/public_keys` and stores:
 All are saved in `state.json`.
 
 
-## Step 3: Subscribe to Activity Stream (DOESN'T EXIST YET IN PUBLIC_API)
+## Step 3: Subscribe to Activity Stream
 
 Create a `chat.received` subscription for the authenticated user:
 
@@ -90,7 +90,7 @@ Bare-bones echo bot:
 uv run xchat-bot-run
 ```
 
-Grok-powered bot:
+Grok-powered bot (requires Grok API token):
 
 ```bash
 uv run xchat-bot-run-grok
