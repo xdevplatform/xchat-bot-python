@@ -15,15 +15,6 @@ from .state import load_state, save_state
 from .util import as_dict, pick_decryptable_key
 
 
-STAGING_HEADERS = {
-    "X-TFE-Experiment-environment": "staging1",
-    "dtab-local": (
-        "/s/datadelivery-staf/proxyapp-endpoint-ActivityStream:https => "
-        "/srv#/staging1/atla/datadelivery-staf/proxyapp-endpoint-ActivityStream:https"
-    ),
-    "X-B3-Flags": "1",
-}
-
 GROUP_MENTION = "@mr_the2nd"
 DEDUPE_MAX_EVENTS = 500
 
@@ -36,10 +27,9 @@ def build_chat_crypto(private_keys: str) -> Chat:
 
 def build_stream_client(env: dict) -> Client:
     client = Client(
-        base_url=env.get("XDK_BASE_URL", "https://global.dev.cftls.t.co"),
+        base_url=env.get("XDK_BASE_URL", "https://api.x.com"),
         bearer_token=env.get("BEARER_TOKEN"),
     )
-    client.session.headers.update(STAGING_HEADERS)
     return client
 
 
@@ -52,7 +42,6 @@ def build_send_client(env: dict, token: dict) -> Client:
         redirect_uri=env.get("OAUTH_REDIRECT_URI"),
         scope=env.get("OAUTH_SCOPES"),
     )
-    client.session.headers.update(STAGING_HEADERS)
     return client
 
 

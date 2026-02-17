@@ -46,8 +46,6 @@ def main() -> None:
         redirect_uri=env.get("OAUTH_REDIRECT_URI"),
         scope=env.get("OAUTH_SCOPES"),
     )
-    client.session.headers["X-B3-Flags"] = "1"
-    client.session.headers["X-TFE-Experiment-environment"] = "staging1"
     me = _as_dict(client.users.get_me())
     user_id = (me.get("data") or {}).get("id")
     if not user_id:
